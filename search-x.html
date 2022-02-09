@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Seach</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+	<style>
+		.inputContainer{
+			height: 52px;
+			z-index: 10;
+		}
+		#searchbox{
+			background:transparent;
+			color:#fff;
+			border:0;
+			outline:none;
+		}
+		/*#searchbox:focus{
+			outline: none;
+			border-color: inherit;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+		}*/
+		.dropdown{
+			border-bottom-left-radius: 15px;
+			border-bottom-right-radius: 15px;
+			padding-top:1rem;
+			padding-bottom:1.25rem;
+			display:none;
+		}
+		.dropdown > .link{
+			padding-left:4rem;
+			padding-right:3rem;
+			padding-top: .25rem;
+			padding-bottom: .25rem;
+			opacity: .9;
+		}
+		.dropdown > .link:hover{
+			background:rgba(0,0,0,.1);
+		}
+		.dropdown > .link:hover a{
+			color:#06c;
+		}
+		.dropdown > .title-link{
+			font-size: .75rem;
+			opacity: .8;
+			padding-left:3rem;
+			padding-right:3rem;
+			padding-top: .25rem;
+			padding-bottom: .25rem;
+			text-transform: uppercase;
+		}
+		.dropdown,.dropdown a{
+			text-decoration: none;
+			color:#1d1d1f;
+		}
+		.dropdown a{
+			width:100%;
+			display: block;
+		}
+		.dropdown hr{
+			margin-left:3rem;
+			margin-right:3rem;
+		}
+		.search-icon, .close-icon{
+			color:#fff;
+			width:36px;
+			height:36px;
+			top:0px;
+			opacity: .8;
+			text-align: center;
+			line-height: 36px;
+			vertical-align: middle;
+		}
+		.close-icon{
+			right:0;
+			cursor: pointer;
+		}
+		.search-icon{
+			cursor: pointer;
+		}
+		.search-icon-toggle{
+			color:#fff;
+			width:36px;
+			height:36px;
+			text-align: center;
+			line-height: 36px;
+			vertical-align: middle;
+			cursor:pointer;
+		}
+		.dark-overlay {
+			background:rgba(0,0,0,.5);
+			display:none;
+		}
+		.search-container{
+			height: 52px;
+			top:8px;
+			display: none;
+		}
+		.pagination-container{
+			display:none;
+		}
+	</style>
+</head>
+<body>
+	<div class="inputContainer p-5 pt-2 pb-2 bg-dark position-relative">
+		<div class="text-center">
+			<i class="fas fa-search search-icon-toggle"></i>
+		</div>
+		<div class="search-container position-absolute w-100">
+			<div class="position-relative mx-auto" style="max-width: 900px">
+				<form class="searchForm" action="" method="get">
+					<i class="fas fa-search position-absolute search-icon"></i>
+					<input class="form-control px-5" type="search_query" id="searchbox" placeholder="search" name="searchAll">
+					<input type="hidden" id="pagebox" name="page" value="1">
+					<i class="fas fa-times position-absolute close-icon"></i>
+				</form>
+				<div class="dropdown bg-light position-absolute w-100 mt-2"></div>
+			</div>
+		</div>
+	</div>
+	<div class="dark-overlay position-absolute w-100 h-100 left-0 top-0"></div>
+
+	<div class="container searchAll py-5">
+	</div>
+	<nav class="d-flex justify-content-center pagination-container">
+	  <ul class="pagination mx-auto">
+	    <li class="page-item page-prev"><a class="page-link" href="#" page="prev">Previous</a></li>
+	    <!-- <li class="page-item"><a class="page-link page-link-1" href="#" page="1">1</a></li>
+	    <li class="page-item"><a class="page-link page-link-2" href="#" page="2">2</a></li>
+	    <li class="page-item"><a class="page-link page-link-3" href="#" page="3">3</a></li> -->
+	    <li class="page-item page-next"><a class="page-link" href="#" page="next">Next</a></li>
+	  </ul>
+	</nav>
+
+
+	<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script>
+	var settings = {
+		maxShownResults: 10, //Show no more than this many results
+
+		generated: {
+			// Don't touch these
+			lock: false,
+			original: "",
+			shown: 0,
+			selected: -1,
+			results: []
+		}
+	};
+
+	var quicklinks = `<div class="link"><a href="">Quicklink 1</a></div><div class="link"><a href="">Quicklnk 2</a></div>`
+
+	var Timeout;
+
+	var maxTitleLength = 60
+
+	var maxBodyLength = 500
+
+	var showContent = false
+
+	var htmlTitle = "";
+
+	var htmlBody = ""
+
+	var page = 1
+
+	var searchVal = ""
+
+	var maxShowPageNumbers = 10
+
+	var resultsCount = 0
+
+	const apiEndpoint = `http://localhost:8787/v1/api`;
+
+	function pageVisit(id,search_term){
+		console.log("clicked")
+		$.post(`${apiEndpoint}/page-visits`,
+			{
+				page_id : id,
+				// title: title,
+				// link: url,
+				search_term : search_term
+			},
+			function(data, status){
+			});
+	}
+	
+
+	function logsSearchTerms(searchTerm){
+		console.log(searchTerm)
+		$.post(`${apiEndpoint}/search-logs`,
+			{
+				search_term : searchTerm
+			},
+			function(data, status){
+			});
+	}
+
+$(document).ready(function(){
+	var t = (callback)=>{
+		let sv = getUrlParam("searchAll")
+		let pg = getUrlParam("page") ? getUrlParam("page"):1
+		callback(sv,pg)
+	}
+
+
+	t(function(sv,pg){
+		searchVal=sv
+		page=pg
+		$("#searchbox").val(sv)
+		//renumber page numbers
+		pg = parseInt(pg)
+
+		for(let i = 0; i < maxShowPageNumbers; i ++){
+			let pnumbers = Math.abs(i - maxShowPageNumbers)
+			$(".page-prev").after(`<li class="page-item"><a class="page-link page-link-${pnumbers}" href="#" page="${pnumbers}">${pnumbers}</a></li>`)
+		}
+
+		$(".page-link-"+pg).css("font-weight","bold")
+
+		if(pg <= 1){
+			$('.page-prev').addClass('disabled')
+		}
+
+
+		if(sv)
+			showAll(sv,pg)
+	})
+
+	$(".pagination .page-link").on('click',function(e){
+		e.preventDefault()
+		var pg = $(this).attr("page")
+		if(pg=="prev"){
+			page--
+		}else if(pg=="next"){
+			page++
+		}else{
+			page = parseInt(pg)
+		}
+		$("#pagebox").val(page)
+		$(".searchForm").submit()
+
+
+	})
+
+
+
+	function getUrlParam(name){
+	    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+	    if (results==null) {
+	       return null;
+	    }
+	    return decodeURI(results[1]) || 0;
+	}
+
+	function showAll(sv,page=1){
+		if(sv != ""){
+			ShowResults(sv, 
+				function(hBody,count){
+					$(".searchAll").html(hBody)
+					if(Math.floor(count/settings.maxShownResults)+1==page)
+						$(".page-next").addClass('disabled')
+
+					for(let i=0;i<settings.maxShownResults+1;i++){
+						if(i>Math.ceil(count/10))
+							$(".page-link-"+i).parent().addClass('disabled')
+					}
+
+
+					$('.pagination-container').css('display','block')
+				},
+				page)
+		}
+	}
+	
+
+	$(".search-icon-toggle").on('click',function(){
+		$('.dropdown').show(0)
+		$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}`); //set html of dropdown to what was generated
+		if($("#searchbox").val() != ""){
+			SearchUp($("#searchbox").val())
+		}
+		ShowSearch()
+
+	})
+
+	$("#searchbox").keyup(function(e) {
+		
+		SearchUp($(this).val())//set html of dropdown to what was generated
+
+	});
+
+	$(".search-icon").on('click',function(){
+		
+		logsSearchTerms($("#searchbox").val())
+		setTimeout(()=>{
+			
+			$(".searchForm").submit()
+		},500)
+
+	})
+
+	$(".close-icon").on('click',function(){
+		ClearInput()
+		HideSearch()
+	})
+
+	$(".dark-overlay").on('click',function(){
+		HideSearch()
+	})
+	
+	function ShowSearch(){
+		$(".search-container").show(500);
+		$(".dark-overlay").show(500)
+		$(".search-icon-toggle").hide(500)
+		$("body").css('overflow','hidden')
+		$("#searchbox").focus()
+	}
+	function HideSearch(){
+		$(".search-container").hide(500);
+		$(".dark-overlay").hide(500)
+		$(".search-icon-toggle").show(500);
+		$("body").css('overflow','auto')
+	}
+
+
+	function SearchUp(val){
+	  clearTimeout(Timeout);
+	  Timeout = setTimeout(()=>{
+			$(".dropdown").css('display','block');
+			if (val == "") { //If there is nothing in the search box then ensure no suggestions are showed
+				$('.dropdown').show()
+				$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}`); 
+			}
+			
+
+			ShowResults(val);
+		},500)
+	   
+	}
+
+
+	function ShowSelected() {
+	   $("#searchbox").val( //Make the search bar show the selected text
+		settings.generated.results[Math.max(0, settings.generated.selected)]
+		);
+	   $(`.dropdown>.result`).removeClass("selected"); //remove selected effect from all
+	   $(`.dropdown>.result:nth-child(${settings.generated.selected+1})`).addClass("selected"); //add selected effect to one
+	}
+
+	function ClearInput() {
+	   $("#searchbox").val("");
+	   $(".dropdown").html("");
+	   $(".dropdown").css('display','none');
+	}   
+
+	// $(document).on("click", ".dropdown>.result", function() { //On suggestion click
+	// 	$("#searchbox").val($(this).attr("plain"));
+	// 	ShowResults($(this).attr("plain"));
+	// });
+
+	function ShowResults(query,callback,page=1) { //This will generate ssuggestions based on a query
+
+	    if (settings.generated.lock) return; //Don't pass if locked
+	    settings.generated.lock = true; //lock
+			
+
+	   	$.ajax({
+			url: `${apiEndpoint}/search`,
+			data: "search="+escape(query.replace(/ /g, '+'))+"&page="+page,
+			Method: "GET",
+		  	/////////////////////////////////////////////////////////////
+			success: function(data) {
+				// var data = JSON.parse(JSON.stringify(data.responseJSON))
+				console.log(data)
+				if(!data){
+					$(".dropdown").html(`<div class='title-link'>No Results</div>`)
+					return
+				}
+				
+
+				//get contents
+				var title = data.contents.map((e)=>{
+					return e.title
+				})
+
+				var body = data.contents.map((e)=>{
+					return e.content
+				})
+
+
+				var resultTitle = title; //Just get the array of results
+				var resultBody = body
+				htmlTitle = "";
+				htmlBody = ""
+				settings.maxShownResults = data.limit
+			
+				settings.generated.results = []; //results that are listed
+				for (
+					var i = 0;
+					i < Math.min(settings.maxShownResults, resultTitle.length);
+					i++
+				) { //loop maxShownResults or less if there are less results available
+					//for some reason there are many results which are the same word twice - this just ignores them
+
+					currentResult = resultTitle[i]
+				   	settings.generated.results[settings.generated.results.length] = currentResult; //add result to list
+
+				   	var lastIndex =0
+				   	if(currentResult.length > maxTitleLength){
+						while(currentResult.charAt(maxTitleLength+lastIndex) != " " && lastIndex <currentResult.length){
+							lastIndex++;
+						}
+					}
+					var resultTitleLimit = currentResult.substr(0,maxTitleLength+lastIndex)
+					// var resultTitleLimit = currentResult
+
+				   	//display in dropdown
+				   	htmlTitle +=
+					`<div class="link">
+						<a 
+							href="${data.contents[i].link}" 
+							class="result" plain="${resultTitleLimit}" 
+							id="${data.contents[i].id}" 
+							onclick="
+								pageVisit('${data.contents[i].id}','${$("#searchbox").val()}');
+								logsSearchTerms('${$("#searchbox").val()}')
+								">` +
+							resultTitleLimit +
+					`	</a></div>`; //html for a suggestion
+
+					currentResultBody = resultBody[i]
+
+					lastIndex =0
+				   	if(currentResultBody.length > maxBodyLength){
+						while(currentResultBody.charAt(maxBodyLength+lastIndex) != " " && lastIndex <currentResultBody.length){
+							lastIndex++;
+						}
+					}
+					var resultBodyLimit = currentResultBody.substr(0,maxBodyLength+lastIndex)
+
+					htmlBody +=
+					`
+					<a 
+						href="${data.contents[i].link}" 
+						class="result"
+						onclick="
+							pageVisit('${data.contents[i].id}','${getUrlParam('searchAll')}');
+							logsSearchTerms('${$("#searchbox").val()}')
+							">
+						${resultTitleLimit}
+						
+					</a>
+					<p>${resultBodyLimit}</p>
+					`
+				
+				}
+				settings.generated.shown = settings.generated.results.length //number of selections
+				settings.generated.selected = -1; //reset selected
+
+
+				$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}<hr><div class='title-link'>Results</div>${htmlTitle}`); //set html of dropdown to what was generated
+				if(callback != null)
+		   			callback(htmlBody,data.count)
+
+			},
+			error: function(XMLHttpRequest, textStatus, errorThrown) { 
+				console.log(XMLHttpRequest)
+			}       
+		});
+    	settings.generated.lock = false; //unlock
+	}
+
+
+})
+
+</script>
+</body>
+</html>

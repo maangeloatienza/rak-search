@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Seach</title>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+	<style>
+		.inputContainer{
+			height: 52px;
+			z-index: 10;
+		}
+		#searchbox{
+			background:transparent;
+			color:#fff;
+			border:0;
+			outline:none;
+		}
+		/*#searchbox:focus{
+			outline: none;
+			border-color: inherit;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+		}*/
+		.dropdown{
+			border-bottom-left-radius: 15px;
+			border-bottom-right-radius: 15px;
+			padding-top:1rem;
+			padding-bottom:1.25rem;
+			display:none;
+		}
+		.dropdown > .link{
+			padding-left:4rem;
+			padding-right:3rem;
+			padding-top: .25rem;
+			padding-bottom: .25rem;
+			opacity: .9;
+		}
+		.dropdown > .link:hover{
+			background:rgba(0,0,0,.1);
+		}
+		.dropdown > .link:hover a{
+			color:#06c;
+		}
+		.dropdown > .title-link{
+			font-size: .75rem;
+			opacity: .8;
+			padding-left:3rem;
+			padding-right:3rem;
+			padding-top: .25rem;
+			padding-bottom: .25rem;
+			text-transform: uppercase;
+		}
+		.dropdown,.dropdown a{
+			text-decoration: none;
+			color:#1d1d1f;
+		}
+		.dropdown hr{
+			margin-left:3rem;
+			margin-right:3rem;
+		}
+		.search-icon, .close-icon{
+			color:#fff;
+			width:36px;
+			height:36px;
+			top:0px;
+			opacity: .8;
+			text-align: center;
+			line-height: 36px;
+			vertical-align: middle;
+		}
+		.close-icon{
+			right:0;
+			cursor: pointer;
+		}
+		.search-icon-toggle{
+			color:#fff;
+			width:36px;
+			height:36px;
+			text-align: center;
+			line-height: 36px;
+			vertical-align: middle;
+			cursor:pointer;
+		}
+		.dark-overlay {
+			background:rgba(0,0,0,.5);
+			display:none;
+		}
+		.search-container{
+			height: 52px;
+			top:8px;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="inputContainer p-5 pt-2 pb-2 bg-dark position-relative">
+		<div class="text-center">
+			<i class="fas fa-search search-icon-toggle"></i>
+		</div>
+		<div class="search-container position-absolute w-100">
+			<div class="position-relative w-50 mx-auto">
+				<form>
+					<i class="fas fa-search position-absolute search-icon"></i>
+					<input class="form-control px-5" type="search_query" id="searchbox" placeholder="search">
+					<i class="fas fa-times position-absolute close-icon"></i>
+				</form>
+				<div class="dropdown bg-light position-absolute w-100 mt-2"></div>
+			</div>
+		</div>
+	</div>
+	<div class="dark-overlay position-absolute w-100 h-100 left-0 top-0"></div>
+
+
+
+
+
+
+	<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script>
+	var settings = {
+			maxShownResults: 10, //Show no more than this many results
+
+			generated: {
+			// Don't touch these
+			lock: false,
+			original: "",
+			shown: 0,
+			selected: -1,
+			results: []
+		}
+	};
+
+	var quicklinks = `<div class="link"><a href="">Quicklink 1</a></div><div class="link"><a href="">Quicklnk 2</a></div>`
+
+	var Timeout;
+
+$(document).ready(function(){
+
+	$(".search-icon-toggle").on('click',function(){
+		$('.dropdown').show(0)
+		$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}`); //set html of dropdown to what was generated
+		ShowSearch()
+
+	})
+
+	$("#searchbox").keyup(function(e) {
+		SearchUp(this,e)//set html of dropdown to what was generated
+
+	});
+
+	$(".close-icon, .dark-overlay").on('click',function(){
+		ClearInput()
+		HideSearch()
+	})
+	
+	function ShowSearch(){
+		$(".search-container").show(500);
+		$(".dark-overlay").show(500)
+		$(".search-icon-toggle").hide(500)
+		$("body").css('overflow','hidden')
+	}
+	function HideSearch(){
+		$(".search-container").hide(500);
+		$(".dark-overlay").hide(500)
+		$(".search-icon-toggle").show(500);
+		$("body").css('overflow','auto')
+	}
+	function SearchUp(x,e){
+	  clearTimeout(Timeout);
+	  Timeout = setTimeout(()=>{
+			$(".dropdown").css('display','block');
+			if ($(x).val() == "") { //If there is nothing in the search box then ensure no suggestions are showed
+				$('.dropdown').show()
+				$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}`); 
+			}
+			if (settings.generated.original != $(x).val()) { //If it isn't up or down and the string is different then generate a new bunch of suggestions
+				settings.generated.original == $(x).val();
+				ShowResults($(x).val());
+			}
+		},500)
+	   
+	}
+
+	function ShowSelected() {
+	   $("#searchbox").val( //Make the search bar show the selected text
+		settings.generated.results[Math.max(0, settings.generated.selected)]
+		);
+	   $(`.dropdown>.result`).removeClass("selected"); //remove selected effect from all
+	   $(`.dropdown>.result:nth-child(${settings.generated.selected+1})`).addClass("selected"); //add selected effect to one
+	}
+
+	function ClearInput() {
+	   $("#searchbox").val("");
+	   $(".dropdown").html("");
+	   $(".dropdown").css('display','none');
+	}   
+
+	$(document).on("click", ".dropdown>.result", function() { //On suggestion click
+		$("#searchbox").val($(this).attr("plain"));
+		ShowResults($(this).attr("plain"));
+	});
+
+	function ShowResults(query) { //This will generate ssuggestions based on a query
+	   if (settings.generated.lock) return; //Don't pass if locked
+	   settings.generated.lock = true; //lock
+	   $.ajax({
+		  url: `http://3.138.179.222:8787/v1/api/search`, //Caution: this is not the official API but it is easy, this may break
+		  data: "search="+escape(query.replace(/ /g, '+')),
+		  // data: {
+		  //    // client: "firefox", //odd behaviour with other clients
+		  //    search:escape(query.replace(/ /g, '+')),
+		  //    ds: "yt",
+		  //    q: escape(query.replace(/ /g, '+'))
+		  // },
+		  // dataType: "jsonp", //JSONP
+		  Method: "GET",
+		  success: function(data) {
+
+			// var data = JSON.parse(JSON.stringify(data.responseJSON))
+			if(!data){
+				$(".dropdown").html(`<div class='title-link'>Nothing found</div>`)
+				return
+			}
+
+			//get contents
+			var content = data.contents.map((e)=>{
+				return e.content
+			})
+
+			// console.log(content)
+			var result = content; //Just get the array of results
+			const regex = new RegExp(query, "i"); //Create a regex pattern of the query case insensitive
+			const subst = `<b>${query}</b>`; //Replace the query with a bold query
+			var html = ""; //blank html which will be appended
+			var offset = 0; //offset if results are skipped
+			settings.generated.results = []; //results that are listed
+			for (
+				var i = 0;
+				i < Math.min(settings.maxShownResults, result.length) + offset;
+				i++
+			) { //loop maxShownResults or less if there are less results available
+				//for some reason there are many results which are the same word twice - this just ignores them
+				if (
+					result[i].toLowerCase().split(" ")[0] ==
+					result[i].toLowerCase().split(" ")[1] &&
+					result[i].toLowerCase().split(" ").length == 2
+					) {
+					   offset++; //allow for skipping one
+				} else {
+					var string = result[i]
+					//removes breakline and spaces
+					string = string.replace(/[\n\r\t]/g, " ");
+					string = string.replace(/\s+/g,' ').trim()
+
+					//get word from content
+					var index = string.search(regex)
+
+					//if cant find word from content go to next word
+					if(index == -1){
+						var words = query.split(" ")
+						//if exist stop loop
+						for(word of words){
+							const regex2 = new RegExp(word, "i")
+							index = string.search(regex2, word)
+							if(index>0){
+								break
+							}
+						}
+
+					}
+
+					//complete the last word
+					var lastIndex =0
+					while(string.charAt(index+60+lastIndex) != " "){
+						lastIndex++;
+					}
+					var res = string.substr(index,60+lastIndex)
+
+
+
+				   	settings.generated.results[settings.generated.results.length] = res; //add result to list
+
+				   	//display in dropdown
+				   	html +=
+				   `<div class="link"><a href="${data.contents[i].link}" class="result" plain="${res}">` +
+				   res +
+					  `</a></div>`; //html for a suggestion
+				}
+			}
+			settings.generated.shown = settings.generated.results.length //number of selections
+			settings.generated.selected = -1; //reset selected
+
+
+			$(".dropdown").html(`<div class='title-link'>Quick Links</div>${quicklinks}<hr><div class='title-link'>Suggested Searches</div>${html}`); //set html of dropdown to what was generated
+		  },
+		  error: function(XMLHttpRequest, textStatus, errorThrown) { 
+				console.log(XMLHttpRequest)
+			}       
+		});
+
+	   settings.generated.lock = false; //unlock
+	}
+
+
+	console.clear();
+})
+
+</script>
+</body>
+</html>
